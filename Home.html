@@ -1,0 +1,347 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Simulador de Modelo Geral de Regressão Linear</title>
+
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <style>
+    body{
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      margin:20px;
+      background:#0f172a;
+      color:#f1f5f9;
+      line-height:1.6;
+    }
+
+    header{
+      max-width:1100px;
+      margin:0 auto 20px auto;
+    }
+
+    header h1{
+      font-size:28px;
+      margin-bottom:6px;
+    }
+
+    header p{
+      color:#94a3b8;
+      font-size:14px;
+      max-width:900px;
+    }
+
+    .wrap{
+      max-width:1100px;
+      margin:auto;
+      display:grid;
+      grid-template-columns: 360px 1fr;
+      gap:16px;
+    }
+
+    .card{
+      background:#111827;
+      border:1px solid #1f2937;
+      border-radius:14px;
+      padding:16px;
+    }
+
+    h2{
+      font-size:18px;
+      margin-bottom:12px;
+    }
+
+    label{
+      display:block;
+      margin:12px 0 6px;
+      font-size:13px;
+      color:#cbd5e1;
+    }
+
+    textarea{
+    width:92%;        /* diminui a largura do retângulo */
+    min-height:240px;
+    resize:vertical;
+    border-radius:10px;
+    border:1px solid #334155;
+    background:#0b1220;
+    color:#f1f5f9;
+    padding:12px;
+    font-family:Consolas, monospace;
+    font-size:14px;
+    }
+
+
+    textarea:focus{
+      outline:2px solid #60a5fa;
+      border-color:#60a5fa;
+    }
+
+    button{
+      width:100%;
+      padding:12px;
+      border-radius:12px;
+      border:0;
+      background:#2563eb;
+      color:white;
+      font-weight:700;
+      font-size:15px;
+      cursor:pointer;
+      margin-top:14px;
+    }
+
+    button:hover{
+      filter:brightness(1.05);
+    }
+
+    button:focus{
+      outline:3px solid #93c5fd;
+    }
+
+    .grid2{
+      display:grid;
+      grid-template-columns:1fr 1fr;
+      gap:10px;
+      margin-top:14px;
+    }
+
+    .kpi{
+      background:#0b1220;
+      border:1px solid #334155;
+      border-radius:10px;
+      padding:10px;
+    }
+
+    .kpi .t{
+      font-size:12px;
+      color:#94a3b8;
+    }
+
+    .kpi .v{
+      font-size:16px;
+      font-weight:700;
+      margin-top:6px;
+    }
+
+    .mono{
+      font-family:Consolas, monospace;
+    }
+
+    .small{
+      font-size:12px;
+      color:#94a3b8;
+    }
+
+    canvas{
+      background:#0b1220;
+      border:1px solid #334155;
+      border-radius:14px;
+      padding:10px;
+    }
+
+    table{
+      width:100%;
+      border-collapse:collapse;
+      margin-top:14px;
+      font-size:12px;
+    }
+
+    th, td{
+      border-bottom:1px solid #1f2937;
+      padding:8px;
+      text-align:right;
+    }
+
+    th{
+      color:#cbd5e1;
+    }
+
+    th:first-child, td:first-child{
+      text-align:left;
+    }
+  </style>
+</head>
+
+<body>
+
+<header>
+  <h1>📊 Simulador de Modelo Geral de Regressão Linear</h1>
+  <p>
+    Ferramenta para identificação de sistemas e ajuste do modelo
+    <span class="mono">y = a + b·x</span> a partir de dados experimentais.
+    Permite inserir valores de <b>X</b> e <b>Y</b>, visualizar o gráfico,
+    analisar erros e avaliar a qualidade do ajuste.
+  </p>
+</header>
+
+<div class="wrap">
+
+  <!-- PAINEL DE ENTRADA -->
+  <div class="card">
+    <h2>Entrada de dados</h2>
+
+    <p class="small">
+      Insira os pares <b>X Y</b> (Distância, Tempo) em cada linha.
+      Separadores aceitos: espaço, vírgula ou tab.
+    </p>
+
+    <label for="dataInput">Lista de valores</label>
+    <textarea id="dataInput" aria-label="Lista de valores X e Y">
+8 15
+6 20
+15 20
+20 40
+25 50
+11 25
+5 10
+32 55
+28 35
+20 30
+    </textarea>
+
+    <button id="btn" aria-label="Calcular regressão linear e atualizar gráfico">
+      Calcular e Plotar
+    </button>
+
+    <div class="grid2">
+      <div class="kpi">
+        <div class="t">Equação ajustada</div>
+        <div class="v mono" id="eq">y = a + b·x</div>
+      </div>
+      <div class="kpi">
+        <div class="t">Coeficiente R²</div>
+        <div class="v mono" id="r2">—</div>
+      </div>
+    </div>
+
+    <div class="grid2">
+      <div class="kpi">
+        <div class="t">a (intercepto)</div>
+        <div class="v mono" id="aVal">—</div>
+      </div>
+      <div class="kpi">
+        <div class="t">b (inclinação)</div>
+        <div class="v mono" id="bVal">—</div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- PAINEL DE RESULTADOS -->
+  <div class="card">
+    <h2>Resultados e gráfico</h2>
+
+    <canvas id="chart" height="160"
+      role="img"
+      aria-label="Gráfico de dispersão com reta de regressão linear">
+    </canvas>
+
+    <table>
+      <thead>
+        <tr>
+          <th>Ponto</th>
+          <th>X</th>
+          <th>Y</th>
+          <th>Ŷ = a + b·X</th>
+          <th>Erro (Y − Ŷ)</th>
+        </tr>
+      </thead>
+      <tbody id="tblBody"></tbody>
+    </table>
+  </div>
+
+</div>
+
+<script>
+  function parsePairs(text){
+    const lines = text.split(/\r?\n/).map(l => l.trim()).filter(l => l);
+    const x = [], y = [];
+    for(const line of lines){
+      const nums = line.match(/-?\d+(\.\d+)?/g);
+      if(nums && nums.length >= 2){
+        x.push(Number(nums[0]));
+        y.push(Number(nums[1]));
+      }
+    }
+    if(x.length < 2) throw new Error("Insira ao menos dois pares X Y.");
+    return {x, y};
+  }
+
+  function regressaoLinear(x, y){
+    const n = x.length;
+    const xBar = x.reduce((a,b)=>a+b,0)/n;
+    const yBar = y.reduce((a,b)=>a+b,0)/n;
+
+    let num = 0, den = 0;
+    for(let i=0;i<n;i++){
+      num += (x[i]-xBar)*(y[i]-yBar);
+      den += (x[i]-xBar)**2;
+    }
+
+    const b = num/den;
+    const a = yBar - b*xBar;
+
+    let ssRes=0, ssTot=0;
+    for(let i=0;i<n;i++){
+      const yHat = a + b*x[i];
+      ssRes += (y[i]-yHat)**2;
+      ssTot += (y[i]-yBar)**2;
+    }
+
+    const r2 = 1 - ssRes/ssTot;
+    return {a,b,r2};
+  }
+
+  let chart;
+
+  function plotar(){
+    const {x,y} = parsePairs(document.getElementById("dataInput").value);
+    const {a,b,r2} = regressaoLinear(x,y);
+
+    document.getElementById("aVal").textContent = a.toFixed(4);
+    document.getElementById("bVal").textContent = b.toFixed(4);
+    document.getElementById("r2").textContent = r2.toFixed(4);
+    document.getElementById("eq").textContent = `y = ${a.toFixed(3)} + ${b.toFixed(3)}·x`;
+
+    const tbody = document.getElementById("tblBody");
+    tbody.innerHTML = "";
+
+    x.forEach((xi,i)=>{
+      const yHat = a + b*xi;
+      const e = y[i] - yHat;
+      tbody.innerHTML += `
+        <tr>
+          <td>${i+1}</td>
+          <td>${xi}</td>
+          <td>${y[i]}</td>
+          <td>${yHat.toFixed(3)}</td>
+          <td>${e.toFixed(3)}</td>
+        </tr>`;
+    });
+
+    const pontos = x.map((xi,i)=>({x:xi,y:y[i]}));
+    const linha = [
+      {x:Math.min(...x), y:a + b*Math.min(...x)},
+      {x:Math.max(...x), y:a + b*Math.max(...x)}
+    ];
+
+    if(chart) chart.destroy();
+    chart = new Chart(document.getElementById("chart"),{
+      type:"scatter",
+      data:{
+        datasets:[
+          {label:"Dados", data:pontos, pointRadius:5},
+          {label:"Reta ajustada", data:linha, showLine:true, pointRadius:0}
+        ]
+      }
+    });
+  }
+
+  document.getElementById("btn").onclick = plotar;
+  plotar();
+</script>
+
+</body>
+</html>

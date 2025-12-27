@@ -14,11 +14,5 @@ denominador = np.sum((x - x_bar)**2)
 b = numerador / denominador
 a = y_bar - b*x_bar
 
-print("a =", a)
-print("b =", b)
-
 y_modelo = a + b*x
 erro = y - y_modelo
-
-print("Erros:", erro)
-print("Soma dos erros:", np.sum(erro))
